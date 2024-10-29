@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",                        // Целевая версия JavaScript
+    "module": "CommonJS",                      // Модульная система для Node.js
+    "rootDir": "./src",                        // Корневая директория исходников
+    "outDir": "./build",                        // Директория для скомпилированных файлов
+    "resolveJsonModule": true,                 // Разрешает импорт JSON файлов
+    "esModuleInterop": true,                   // Совместимость с модулями ES6
+    "strict": true,                            // Включение строгого режима TypeScript
+    "skipLibCheck": true,                      // Пропуск проверки типов библиотек
+    "forceConsistentCasingInFileNames": true   // Проверка написания имён файлов
+  },
+  "include": ["src/**/*"],                      // Включение всех файлов в src
+  "exclude": ["node_modules", "build"]           // Исключение node_modules и dist
+}
+
