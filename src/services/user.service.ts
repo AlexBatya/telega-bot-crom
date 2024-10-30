@@ -1,31 +1,42 @@
 import TelegramBot from 'node-telegram-bot-api';
 import config from '../config/localhost.json';
 
-export const isAdmin = async (bot: TelegramBot, chatId: number, userId: number): Promise<boolean> => {
-    // Функция для получения актуального chat_id
-    const getUpdatedChatId = async (chatId: number): Promise<number> => {
-        try {
-            const chatInfo = await bot.getChat(chatId);
-            return chatInfo.id; // Возвращаем актуальный chat_id
-        } catch (error: any) {
-            console.error("Ошибка при получении информации о чате:", error);
-            return chatId; // Возвращаем оригинальный chatId в случае ошибки
-        }
-    };
+interface CachedAdmins {
+    [chatId: number]: {
+        admins: TelegramBot.ChatMember[],
+        lastUpdated: number
+    }
+}
 
-    // Получаем актуальный chat_id
-    const targetChatId = await getUpdatedChatId(chatId);
+const adminCache: CachedAdmins = {};
+const CACHE_DURATION = 5 * 60 * 1000; // Время жизни кеша (5 минут)
+
+export const isAdmin = async (bot: TelegramBot, chatId: number, userId: number): Promise<boolean> => {
+    const now = Date.now();
+
+    // Проверка `chatId`, чтобы избежать ошибок
+    if (!chatId || chatId > 0) {
+        console.error("Ошибка: chatId должен быть отрицательным числом для групп и супергрупп. Получено:", chatId);
+        return false;
+    }
+
+    // Если кеш существует и актуален, возвращаем его
+    if (adminCache[chatId] && (now - adminCache[chatId].lastUpdated < CACHE_DURATION)) {
+        return adminCache[chatId].admins.some(admin => admin.user.id === userId);
+    }
 
     try {
-        const admins = await bot.getChatAdministrators(targetChatId);
+        // Прямое получение списка администраторов без дополнительного вызова getChat
+        const admins = await bot.getChatAdministrators(chatId);
+        adminCache[chatId] = { admins, lastUpdated: now };
+
+        // Логирование администратора для отладки
+        console.log(`Список администраторов чата ${chatId}:`, admins.map(admin => admin.user.username || admin.user.id));
+
+        // Проверка, является ли пользователь администратором
         return admins.some(admin => admin.user.id === userId);
-    } catch (error: any) {  // Приведение типа ошибки к `any`
-        // Проверяем, если ошибка связана с изменением типа чата
-        if (error.response && error.response.statusCode === 400 && error.response.body.description.includes("supergroup")) {
-            console.error("Группа была обновлена до супергруппы. Проверьте корректность chat_id.");
-        } else {
-            console.error("Ошибка при получении списка администраторов:", error);
-        }
+    } catch (error: any) {
+        console.error("Ошибка при получении списка администраторов:", error);
         return false;
     }
 };
