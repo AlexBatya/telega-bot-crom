@@ -6,8 +6,8 @@ export const validateMessage = (bot: TelegramBot) => async (msg: TelegramBot.Mes
     const isLinkValid = await validateLinks(bot)(msg);
     if (!isLinkValid) return false;
 
-    const isBadWordsValid = await validateBadWords(bot)(msg);
-    if (!isBadWordsValid) return false;
+    // const isBadWordsValid = await validateBadWords(bot)(msg);
+    // if (!isBadWordsValid) return false;
 
     return true; // Сообщение валидно
 };
